@@ -1,34 +1,29 @@
 #include <pebble.h>
 
-#define TEA_TEXT_GAP 14
+#define TIMER_TEXT_GAP 14
 
 static Window *s_menu_window, *s_countdown_window, *s_wakeup_window;
 static MenuLayer *s_menu_layer;
-static TextLayer *s_error_text_layer, *s_tea_text_layer, *s_countdown_text_layer, 
+static TextLayer *s_error_text_layer, *s_timer_text_layer, *s_countdown_text_layer, 
                  *s_cancel_text_layer;
 static BitmapLayer *s_bitmap_layer;
-static GBitmap *s_tea_bitmap;
+static GBitmap *s_break_bitmap;
 
 static WakeupId s_wakeup_id = -1;
 static time_t s_wakeup_timestamp = 0;
-static char s_tea_text[32];
+static char s_timer_text[32];
 static char s_countdown_text[32];
 
 typedef struct {
-  char name[16];  // Name of this tea
-  int mins;       // Minutes to steep this tea
-} TeaInfo;
+  char name[16];  // Name of this event
+  int mins;       // Minutes to work between breaks
+} TimerInfo;
 
-// Array of different teas for tea timer
-// {<Tea Name>, <Brew time in minutes>}
-TeaInfo tea_array[] = {
-  {"Green Tea", 1},
-  {"Black Tea", 2},
-  {"Oolong Tea", 3},
-  {"Darjeeling", 4},
-  {"Herbal Tea", 5},
-  {"Mate Tea", 6},
-  {"Chai Tea", 10}
+// Array of different timers
+// {<Event Name>, <Time in minutes>}
+TimerInfo timer_array[] = {
+  {"Break Time!", 20},
+  {"Quick Break", 1}
 };
 
 enum {
@@ -45,10 +40,10 @@ static void select_callback(struct MenuLayer *s_menu_layer, MenuIndex *cell_inde
 
   // Wakeup time is a timestamp in the future
   // so time(NULL) + delay_time_in_seconds = wakeup_time
-  time_t wakeup_time = time(NULL) + tea_array[cell_index->row].mins * 60;
+  time_t wakeup_time = time(NULL) + timer_array[cell_index->row].mins * 60;
 
-  // Use the tea_array index as the wakeup reason, so on wakeup trigger
-  // we know which tea is brewed
+  // Use the timer_array index as the wakeup reason, so on wakeup trigger
+  // we know it's time to break
   s_wakeup_id = wakeup_schedule(wakeup_time, cell_index->row, true);
 
   // If we couldn't schedule the wakeup event, display error_text overlay
@@ -61,12 +56,12 @@ static void select_callback(struct MenuLayer *s_menu_layer, MenuIndex *cell_inde
   persist_write_int(PERSIST_WAKEUP, s_wakeup_id);
 
   // Switch to countdown window
-  window_stack_push(s_countdown_window, false);
+  window_stack_push(s_countdown_window, true);
 }
 
 static uint16_t get_sections_count_callback(struct MenuLayer *menulayer, uint16_t section_index, 
                                             void *callback_context) {
-  int count = sizeof(tea_array) / sizeof(TeaInfo);
+  int count = sizeof(timer_array) / sizeof(TimerInfo);
   return count;
 }
 
@@ -79,15 +74,15 @@ static int16_t get_cell_height_callback(MenuLayer *menu_layer, MenuIndex *cell_i
 
 static void draw_row_handler(GContext *ctx, const Layer *cell_layer, MenuIndex *cell_index, 
                              void *callback_context) {
-  char* name = tea_array[cell_index->row].name;
-  int text_gap_size = TEA_TEXT_GAP - strlen(name);
-  int mins = tea_array[cell_index->row].mins;
+  char* name = timer_array[cell_index->row].name;
+  int text_gap_size = TIMER_TEXT_GAP - strlen(name);
+  int mins = timer_array[cell_index->row].mins;
 
-  // Using simple space padding between name and s_tea_text for appearance of edge-alignment
-  snprintf(s_tea_text, sizeof(s_tea_text), "%s%*s%d min", PBL_IF_ROUND_ELSE("", name), 
+  // Using simple space padding between name and s_timer_text for appearance of edge-alignment
+  snprintf(s_timer_text, sizeof(s_timer_text), "%s%*s%d min", PBL_IF_ROUND_ELSE("", name), 
            PBL_IF_ROUND_ELSE(0, text_gap_size), "", mins);
-  menu_cell_basic_draw(ctx, cell_layer, PBL_IF_ROUND_ELSE(name, s_tea_text), 
-                       PBL_IF_ROUND_ELSE(s_tea_text, NULL), NULL);
+  menu_cell_basic_draw(ctx, cell_layer, PBL_IF_ROUND_ELSE(name, s_timer_text), 
+                       PBL_IF_ROUND_ELSE(s_timer_text, NULL), NULL);
 }
 
 static void menu_window_load(Window *window) {
@@ -125,13 +120,15 @@ static void timer_handler(void *data) {
     wakeup_query(s_wakeup_id, &s_wakeup_timestamp);
   }
   int countdown = s_wakeup_timestamp - time(NULL);
-  snprintf(s_countdown_text, sizeof(s_countdown_text), "%d seconds", countdown);
+  int countdown_minutes = countdown / 60;
+  int countdown_seconds = countdown % 60;
+  snprintf(s_countdown_text, sizeof(s_countdown_text), "%d:%d", countdown_minutes, countdown_seconds);
   layer_mark_dirty(text_layer_get_layer(s_countdown_text_layer));
   app_timer_register(1000, timer_handler, data);
 }
 
 static void countdown_back_handler(ClickRecognizerRef recognizer, void *context) {
-  window_stack_pop_all(true); // Exit app while waiting for tea to brew
+  window_stack_pop_all(true); // Exit app while waiting for next break
 }
 
 // Cancel the current wakeup event on the countdown screen
@@ -139,7 +136,7 @@ static void countdown_cancel_handler(ClickRecognizerRef recognizer, void *contex
   wakeup_cancel(s_wakeup_id);
   s_wakeup_id = -1;
   persist_delete(PERSIST_WAKEUP);
-  window_stack_pop(true); // Go back to tea selection window
+  window_stack_pop(true); // Go back to timer selection window
 }
 
 static void countdown_click_config_provider(void *context) {
@@ -153,10 +150,10 @@ static void countdown_window_load(Window *window) {
 
   window_set_click_config_provider(window, countdown_click_config_provider);
 
-  s_tea_text_layer = text_layer_create(GRect(0, 32, bounds.size.w, 20));
-  text_layer_set_text(s_tea_text_layer, "Steeping time left");
-  text_layer_set_text_alignment(s_tea_text_layer, GTextAlignmentCenter);
-  layer_add_child(window_layer, text_layer_get_layer(s_tea_text_layer));
+  s_timer_text_layer = text_layer_create(GRect(0, 32, bounds.size.w, 20));
+  text_layer_set_text(s_timer_text_layer, "Productivity time left");
+  text_layer_set_text_alignment(s_timer_text_layer, GTextAlignmentCenter);
+  layer_add_child(window_layer, text_layer_get_layer(s_timer_text_layer));
 
   s_countdown_text_layer = text_layer_create(GRect(0, 72, bounds.size.w, 20));
   text_layer_set_text(s_countdown_text_layer, s_countdown_text);
@@ -177,11 +174,11 @@ static void countdown_window_load(Window *window) {
 static void countdown_window_unload(Window *window) {
   text_layer_destroy(s_countdown_text_layer);
   text_layer_destroy(s_cancel_text_layer);
-  text_layer_destroy(s_tea_text_layer);
+  text_layer_destroy(s_timer_text_layer);
 }
 
 static void wakeup_click_handler(ClickRecognizerRef recognizer, void *context) {
-  // Exit app after tea is done
+  // Exit app after break is done
   window_stack_pop_all(true);
 }
 
@@ -198,22 +195,22 @@ static void wakeup_window_load(Window *window) {
 
   window_set_click_config_provider(window, wakeup_click_config_provider);
 
-  // Bitmap layer for wakeup "tea is ready" image
+  // Bitmap layer for wakeup "Break time" image
   s_bitmap_layer = bitmap_layer_create(bounds);
-  s_tea_bitmap = gbitmap_create_with_resource(RESOURCE_ID_TEA_SIGN);
-  bitmap_layer_set_bitmap(s_bitmap_layer, s_tea_bitmap);
+  s_break_bitmap = gbitmap_create_with_resource(RESOURCE_ID_BREAK_SIGN);
+  bitmap_layer_set_bitmap(s_bitmap_layer, s_break_bitmap);
   layer_add_child(window_layer, bitmap_layer_get_layer(s_bitmap_layer));
 }
 
 static void wakeup_window_unload(Window *window) {
-  gbitmap_destroy(s_tea_bitmap);
+  gbitmap_destroy(s_break_bitmap);
   bitmap_layer_destroy(s_bitmap_layer);
 }
 
 static void wakeup_handler(WakeupId id, int32_t reason) {
   //Delete persistent storage value
   persist_delete(PERSIST_WAKEUP);
-  window_stack_push(s_wakeup_window, false);
+  window_stack_push(s_wakeup_window, true);
   vibes_double_pulse();
 }
 
@@ -253,16 +250,16 @@ static void init(void) {
 
   // Check to see if we were launched by a wakeup event
   if (launch_reason() == APP_LAUNCH_WAKEUP) {
-    // If woken by wakeup event, get the event display "tea is ready"
+    // If woken by wakeup event, get the event display "It's break time!"
     WakeupId id = 0;
     int32_t reason = 0;
     if (wakeup_get_launch_event(&id, &reason)) {
       wakeup_handler(id, reason);
     }
   } else if (wakeup_scheduled) {
-    window_stack_push(s_countdown_window, false);
+    window_stack_push(s_countdown_window, true);
   } else {
-    window_stack_push(s_menu_window, false);
+    window_stack_push(s_menu_window, true);
   }
 
   // subscribe to wakeup service to get wakeup events while app is running

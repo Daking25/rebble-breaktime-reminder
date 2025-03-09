@@ -1,8 +1,8 @@
 {
   "uuid": "89bcd079-41b7-4d8c-bc38-af385d86a55c",
-  "shortName": "Tea Timer",
-  "longName": "Tea Timer",
-  "companyName": "MakeAwesomeHappen",
+  "shortName": "Break Time",
+  "longName": "Break Time",
+  "companyName": "KingsForge",
   "versionCode": "1",
   "versionLabel": "1.0",
   "watchapp": {
@@ -17,12 +17,12 @@
         "menuIcon": true,
         "type": "bitmap",
         "name": "IMAGE_ICON",
-        "file": "cup_icon.png"
+        "file": "icons8-old-computer-25.png"
       },
       {
         "type": "bitmap",
-        "name": "TEA_SIGN",
-        "file": "tea-sign.png"
+        "name": "BREAK_SIGN",
+        "file": "icons8-monitor-96-modified.png"
       }
     ]
   },
