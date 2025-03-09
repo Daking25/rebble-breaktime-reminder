@@ -7,8 +7,7 @@ static MenuLayer *s_menu_layer;
 static TextLayer *s_error_text_layer, *s_timer_text_layer, *s_countdown_text_layer, 
                  *s_cancel_text_layer;
 static BitmapLayer *s_bitmap_layer;
-// TODO: Rename and change from tea image.
-static GBitmap *s_tea_bitmap;
+static GBitmap *s_break_bitmap;
 
 static WakeupId s_wakeup_id = -1;
 static time_t s_wakeup_timestamp = 0;
@@ -196,15 +195,15 @@ static void wakeup_window_load(Window *window) {
 
   window_set_click_config_provider(window, wakeup_click_config_provider);
 
-  // Bitmap layer for wakeup "tea is ready" image
+  // Bitmap layer for wakeup "Break time" image
   s_bitmap_layer = bitmap_layer_create(bounds);
-  s_tea_bitmap = gbitmap_create_with_resource(RESOURCE_ID_TEA_SIGN);
-  bitmap_layer_set_bitmap(s_bitmap_layer, s_tea_bitmap);
+  s_break_bitmap = gbitmap_create_with_resource(RESOURCE_ID_BREAK_SIGN);
+  bitmap_layer_set_bitmap(s_bitmap_layer, s_break_bitmap);
   layer_add_child(window_layer, bitmap_layer_get_layer(s_bitmap_layer));
 }
 
 static void wakeup_window_unload(Window *window) {
-  gbitmap_destroy(s_tea_bitmap);
+  gbitmap_destroy(s_break_bitmap);
   bitmap_layer_destroy(s_bitmap_layer);
 }
 
