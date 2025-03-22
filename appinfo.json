@@ -23,6 +23,11 @@
         "type": "bitmap",
         "name": "BREAK_SIGN",
         "file": "icons8-monitor-96-modified.png"
+      },
+      {
+        "type": "bitmap",
+        "name": "PLAY_SIGN",
+        "file": "icons8-play-button-circled-48.png"
       }
     ]
   },

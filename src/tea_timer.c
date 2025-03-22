@@ -6,8 +6,8 @@ static Window *s_menu_window, *s_countdown_window, *s_wakeup_window;
 static MenuLayer *s_menu_layer;
 static TextLayer *s_error_text_layer, *s_timer_text_layer, *s_countdown_text_layer, 
                  *s_cancel_text_layer;
-static BitmapLayer *s_bitmap_layer;
-static GBitmap *s_break_bitmap;
+static BitmapLayer *s_bitmap_layer, *s_play_bitmap_layer;
+static GBitmap *s_break_bitmap, *s_play_bitmap, s_pause_bitmap;
 
 static WakeupId s_wakeup_id = -1;
 static time_t s_wakeup_timestamp = 0;
@@ -147,9 +147,18 @@ static void countdown_click_config_provider(void *context) {
 static void countdown_window_load(Window *window) {
   Layer *window_layer = window_get_root_layer(window);
   GRect bounds = layer_get_bounds(window_layer);
-
+  int play_width = 48;
+  int play_height = 48;
   window_set_click_config_provider(window, countdown_click_config_provider);
 
+  GPoint window_center = grect_center_point(&bounds);
+  int play_center_x = window_center.x - (play_width / 2);
+  int play_center_y = window_center.y - (play_height / 2);
+  s_play_bitmap = gbitmap_create_with_resource(RESOURCE_ID_PLAY_SIGN);
+  s_play_bitmap_layer = bitmap_layer_create(GRect(play_center_x, play_center_y, 48, 48));
+  bitmap_layer_set_bitmap(s_play_bitmap_layer, s_play_bitmap);
+  layer_add_child(window_layer, bitmap_layer_get_layer(s_play_bitmap_layer));
+  
   s_timer_text_layer = text_layer_create(GRect(0, 32, bounds.size.w, 20));
   text_layer_set_text(s_timer_text_layer, "Productivity time left");
   text_layer_set_text_alignment(s_timer_text_layer, GTextAlignmentCenter);
@@ -175,6 +184,7 @@ static void countdown_window_unload(Window *window) {
   text_layer_destroy(s_countdown_text_layer);
   text_layer_destroy(s_cancel_text_layer);
   text_layer_destroy(s_timer_text_layer);
+  bitmap_layer_destroy(s_play_bitmap_layer);
 }
 
 static void wakeup_click_handler(ClickRecognizerRef recognizer, void *context) {
