@@ -28,6 +28,11 @@
         "type": "bitmap",
         "name": "PLAY_SIGN",
         "file": "icons8-play-button-circled-48.png"
+      },
+      {
+        "type": "bitmap",
+        "name": "PAUSE_SIGN",
+        "file": "icons8-pause-button-48.png"
       }
     ]
   },

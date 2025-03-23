@@ -7,7 +7,7 @@ static MenuLayer *s_menu_layer;
 static TextLayer *s_error_text_layer, *s_timer_text_layer, *s_countdown_text_layer, 
                  *s_cancel_text_layer;
 static BitmapLayer *s_bitmap_layer, *s_play_bitmap_layer;
-static GBitmap *s_break_bitmap, *s_play_bitmap, s_pause_bitmap;
+static GBitmap *s_break_bitmap, *s_play_bitmap, *s_pause_bitmap;
 
 static WakeupId s_wakeup_id = -1;
 static time_t s_wakeup_timestamp = 0;
@@ -157,6 +157,12 @@ static void countdown_window_load(Window *window) {
   s_play_bitmap = gbitmap_create_with_resource(RESOURCE_ID_PLAY_SIGN);
   s_play_bitmap_layer = bitmap_layer_create(GRect(play_center_x, play_center_y, 48, 48));
   bitmap_layer_set_bitmap(s_play_bitmap_layer, s_play_bitmap);
+  layer_add_child(window_layer, bitmap_layer_get_layer(s_play_bitmap_layer));
+  
+  
+  s_pause_bitmap = gbitmap_create_with_resource(RESOURCE_ID_PAUSE_SIGN);
+  s_play_bitmap_layer = bitmap_layer_create(GRect(play_center_x+48, play_center_y, 48, 48));
+  bitmap_layer_set_bitmap(s_play_bitmap_layer, s_pause_bitmap);
   layer_add_child(window_layer, bitmap_layer_get_layer(s_play_bitmap_layer));
   
   s_timer_text_layer = text_layer_create(GRect(0, 32, bounds.size.w, 20));
