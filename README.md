@@ -10,3 +10,5 @@ This app is forked from the above linked app and has been tweaked to provide a 2
 <a target="_blank" href="https://icons8.com/icon/8tRpLp4YwV5K/electronics">Electronics</a> icon by <a target="_blank" href="https://icons8.com">Icons8</a>
 <a target="_blank" href="https://icons8.com/icon/dsCBk087BKif/old-computer">Old Computer</a> icon by <a target="_blank" href="https://icons8.com">Icons8</a>
 https://icons8.com/icon/EwwBTzWtiitK/monitor
+<a target="_blank" href="https://icons8.com/icon/114448/play-button-circled">Play Button Circled</a> icon by <a target="_blank" href="https://icons8.com">Icons8</a>
+<a target="_blank" href="https://icons8.com/icon/oAeLSAp97zyu/pause-button">Pause Button</a> icon by <a target="_blank" href="https://icons8.com">Icons8</a>
